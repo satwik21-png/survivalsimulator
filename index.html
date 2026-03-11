@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PixelWild — Open World Survival</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Title Screen -->
+<div id="titleScreen">
+  <div class="title-art">🌲🏔️🌊</div>
+  <h1>PIXEL WILD</h1>
+  <p>Open World Survival · v2.0</p>
+  <div id="apiInput">
+    <label>OpenWeatherMap API Key (optional)</label>
+    <input type="text" id="weatherApiKey" placeholder="Enter API key or leave blank...">
+    <label id="cityLabel">City for real weather (e.g. London)</label>
+    <input type="text" id="weatherCity" placeholder="London" value="London">
+  </div>
+  <button id="startBtn">▶ START GAME</button>
+  <p style="font-size:14px;color:#333;margin-top:8px;">WASD=Move · E=Collect/Attack · F=Eat · Q=Sword · 1-5=Slot</p>
+</div>
+
+<!-- Death Screen -->
+<div id="deathScreen">
+  <h2>☠ YOU DIED</h2>
+  <p id="deathMsg">The wilds claimed your life...</p>
+  <button id="respawnBtn">↺ RESPAWN</button>
+</div>
+
+<!-- Level 2 Transition -->
+<div id="levelTransition">
+  <div class="hell-art">🔥😈🔥</div>
+  <h2>ENTERING HELL — LEVEL 2</h2>
+  <p>Prepare for eternal damnation...</p>
+</div>
+
+<!-- Victory Screen -->
+<div id="victoryScreen">
+  <div style="font-size:60px">🏆</div>
+  <h2>YOU CONQUERED HELL!</h2>
+  <p>The demon boss has been vanquished!</p>
+  <button id="playAgainBtn">▶ PLAY AGAIN</button>
+</div>
+
+<!-- Game Canvas -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- HUD -->
+<div id="stats">
+  <div class="stat-row">
+    <span class="stat-icon">❤</span>
+    <span class="stat-label">HEALTH</span>
+    <div class="bar-wrap"><div class="bar-fill health" id="healthBar" style="width:100%"></div></div>
+    <span class="stat-val" id="healthVal">100</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-icon">🍗</span>
+    <span class="stat-label">HUNGER</span>
+    <div class="bar-wrap"><div class="bar-fill hunger" id="hungerBar" style="width:100%"></div></div>
+    <span class="stat-val" id="hungerVal">100</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-icon">🌡</span>
+    <span class="stat-label">TEMP</span>
+    <div class="bar-wrap"><div class="bar-fill temp" id="tempBar" style="width:70%"></div></div>
+    <span class="stat-val" id="tempVal">70</span>
+  </div>
+</div>
+
+<div id="info-panel">
+  <div class="info-badge">
+    <span class="weather-icon" id="weatherIcon">☀️</span>
+    <span id="weatherLabel">Sunny</span>
+  </div>
+  <div class="info-badge">
+    <span id="timeDisplay">06:00</span>
+    <span id="dayLabel" style="font-size:5px;color:#888"> DAY 1</span>
+  </div>
+  <div class="info-badge" id="levelBadge" style="color:#4ade80;">⚔ LEVEL 1</div>
+</div>
+
+<!-- Kill Counter -->
+<div id="killCounter"></div>
+
+<!-- Hell Horde Counter (Level 2) -->
+<div id="hellCounter">👹 MONSTERS REMAINING: <span id="hellCountNum">0</span></div>
+
+<!-- Boss Arrival Cutscene -->
+<div id="bossArrival">
+  <div class="ba-art">😈</div>
+  <div class="ba-title">⚔ DEMON KING AWAKENS ⚔</div>
+  <div class="ba-sub">THE FINAL BATTLE BEGINS</div>
+</div>
+
+<!-- Upgrade Announcement -->
+<div id="upgradeAnnounce">
+  <div class="ua-row ua-sword">⚔ SOUL SWORD UNLEASHED — POWER ×3!</div>
+  <div class="ua-row ua-fire">🔥 INFERNO BREATH — 9 STREAMS OF DEATH!</div>
+</div>
+
+<!-- Swarm Alert -->
+<div id="swarmAlert">
+  <div class="swarm-title" id="swarmTitle">⚠ SWARM ATTACK ⚠</div>
+  <div class="swarm-sub" id="swarmSub">ALL ANIMALS CONVERGING!</div>
+</div>
+
+<!-- Threat Meter -->
+<div id="threatMeter">
+  <div class="threat-label">🐾 THREAT LEVEL</div>
+  <div class="threat-wrap"><div class="threat-fill" id="threatFill" style="width:0%"></div></div>
+  <div class="threat-val" id="threatVal">CALM</div>
+</div>
+
+<!-- Swarm Countdown -->
+<div id="swarmCountdown" id="swarmCountdown">Next swarm: --s</div>
+
+<!-- Rage Notice -->
+<div id="rageNotice"><div class="rage-txt">😡 ANIMALS ENRAGED!</div></div>
+
+<!-- Boss Bar -->
+<div id="bossBar">
+  <div class="boss-label" id="bossLabel">😈 DEMON LORD</div>
+  <div class="boss-bar-wrap"><div class="boss-bar-fill" id="bossFill" style="width:100%"></div></div>
+</div>
+
+<!-- Inventory -->
+<div id="inventory"></div>
+
+<!-- Keybind hints -->
+<div id="keyhints">E=Collect · Q=Attack · F=Eat · 1-5=Slot · WASD=Move</div>
+
+<!-- Collect prompt -->
+<div id="collectPrompt">Press E to collect</div>
+
+<!-- Portal prompt -->
+<div id="portalPrompt">✨ Press E to enter portal!</div>
+
+<!-- Fire cooldown bar -->
+<div id="fireCooldownBar">
+  <span>🔥 FIRE</span>
+  <div class="fc-wrap"><div class="fc-fill" id="fcFill" style="width:100%"></div></div>
+</div>
+
+<!-- Mobile Controls -->
+<div id="joystick-zone" style="display:none">
+  <div id="joystick-base"></div>
+  <div id="joystick-thumb"></div>
+</div>
+
+<div id="mobile-controls" style="display:none">
+  <button class="action-btn" id="collectBtn"><span class="btn-icon">🤲</span>COLLECT</button>
+  <button class="action-btn" id="eatBtn"><span class="btn-icon">🍽</span>EAT</button>
+  <button class="action-btn attack-btn" id="attackBtn"><span class="btn-icon">⚔️</span>ATTACK</button>
+  <button class="action-btn fire-btn" id="fireBtn" style="display:none"><span class="btn-icon">🔥</span>FIRE</button>
+</div>
+
+<!-- Notification -->
+<div id="notify"></div>
+
+<script src="script.js"></script>
+</body>
+</html>

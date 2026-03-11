@@ -1,0 +1,207 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --hud-bg: rgba(10,8,20,0.82);
+    --hud-border: rgba(80,200,120,0.35);
+    --green: #4ade80; --red: #f87171; --yellow: #fbbf24; --blue: #60a5fa;
+    --cyan: #22d3ee; --orange: #fb923c; --purple: #a78bfa;
+    --pixel: 'Press Start 2P', monospace; --vt: 'VT323', monospace;
+  }
+  html, body { width:100%; height:100%; background:#0a0814; overflow:hidden; font-family:var(--pixel); touch-action:none; user-select:none; }
+  #gameCanvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; }
+  #hud { position:fixed; top:0; left:0; right:0; pointer-events:none; z-index:10; }
+  #stats { position:fixed; top:10px; left:10px; display:flex; flex-direction:column; gap:6px; pointer-events:none; z-index:11; }
+  .stat-row { display:flex; align-items:center; gap:6px; background:var(--hud-bg); border:1px solid var(--hud-border); border-radius:3px; padding:4px 8px; min-width:160px; }
+  .stat-icon { font-size:10px; width:14px; text-align:center; }
+  .stat-label { font-size:5px; color:#aaa; width:32px; }
+  .bar-wrap { flex:1; height:8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:2px; transition:width 0.3s ease; }
+  .bar-fill.health { background:linear-gradient(90deg,#ef4444,#f87171); }
+  .bar-fill.hunger { background:linear-gradient(90deg,#d97706,#fbbf24); }
+  .bar-fill.temp   { background:linear-gradient(90deg,#2563eb,#60a5fa); }
+  .stat-val { font-size:5px; color:#eee; width:22px; text-align:right; }
+  #info-panel { position:fixed; top:10px; right:10px; display:flex; flex-direction:column; gap:6px; align-items:flex-end; pointer-events:none; z-index:11; }
+  .info-badge { background:var(--hud-bg); border:1px solid var(--hud-border); border-radius:3px; padding:5px 9px; font-size:6px; color:#eee; display:flex; align-items:center; gap:5px; }
+  .weather-icon { font-size:14px; }
+  #timeDisplay { font-size:8px; color:var(--cyan); }
+  #inventory { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:11; }
+  .inv-slot { width:52px; height:52px; background:var(--hud-bg); border:2px solid var(--hud-border); border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; cursor:pointer; transition:border-color 0.15s; }
+  .inv-slot.selected { border-color:var(--green); box-shadow:0 0 8px rgba(74,222,128,0.5); }
+  .inv-slot .item-icon { font-size:20px; }
+  .inv-slot .item-count { position:absolute; bottom:2px; right:4px; font-size:5px; color:#fff; text-shadow:1px 1px 0 #000; }
+  .inv-slot .item-name { font-size:4px; color:#aaa; margin-top:1px; }
+  #mobile-controls { position:fixed; bottom:80px; right:12px; display:flex; flex-direction:column; gap:6px; z-index:11; }
+  .action-btn { width:52px; height:52px; background:var(--hud-bg); border:2px solid var(--hud-border); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column; font-size:5px; color:#eee; gap:2px; cursor:pointer; pointer-events:all; transition:background 0.1s; }
+  .action-btn:active { background:rgba(74,222,128,0.2); transform:scale(0.92); }
+  .action-btn .btn-icon { font-size:16px; }
+  .attack-btn { border-color:rgba(255,180,50,0.6) !important; }
+  .attack-btn:active { background:rgba(255,180,0,0.25) !important; }
+  .fire-btn { border-color:rgba(255,80,0,0.8) !important; background:rgba(120,20,0,0.6) !important; }
+  .fire-btn:active { background:rgba(255,80,0,0.4) !important; }
+  #joystick-zone { position:fixed; bottom:80px; left:16px; width:110px; height:110px; z-index:11; pointer-events:all; }
+  #joystick-base { position:absolute; inset:0; border-radius:50%; background:rgba(10,8,20,0.6); border:2px solid rgba(80,200,120,0.3); }
+  #joystick-thumb { position:absolute; width:42px; height:42px; border-radius:50%; background:radial-gradient(circle at 35% 35%, rgba(74,222,128,0.8), rgba(34,197,94,0.4)); border:2px solid rgba(74,222,128,0.6); top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
+  #notify { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--hud-bg); border:1px solid var(--hud-border); border-radius:4px; padding:10px 16px; font-size:7px; color:#eee; pointer-events:none; z-index:20; opacity:0; transition:opacity 0.3s; text-align:center; max-width:240px; }
+  #notify.show { opacity:1; }
+  #keyhints { position:fixed; bottom:75px; left:50%; transform:translateX(-50%); font-size:5px; color:rgba(255,255,255,0.3); pointer-events:none; z-index:11; white-space:nowrap; }
+  #titleScreen { position:fixed; inset:0; background:linear-gradient(160deg,#0a0814 0%,#0d1a0d 60%,#0a0814 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; gap:20px; }
+  #titleScreen h1 { font-size:clamp(16px,4vw,32px); color:var(--green); text-shadow:0 0 20px rgba(74,222,128,0.6),2px 2px 0 #000; letter-spacing:2px; animation:titlePulse 2s ease-in-out infinite; }
+  @keyframes titlePulse { 0%,100%{text-shadow:0 0 20px rgba(74,222,128,0.6),2px 2px 0 #000;} 50%{text-shadow:0 0 40px rgba(74,222,128,0.9),2px 2px 0 #000;} }
+  #titleScreen p { font-size:7px; color:#666; font-family:var(--vt); font-size:18px; }
+  #startBtn { margin-top:10px; padding:12px 28px; background:transparent; border:2px solid var(--green); color:var(--green); font-family:var(--pixel); font-size:8px; cursor:pointer; border-radius:3px; transition:all 0.2s; animation:blink 1.2s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  #startBtn:hover { background:rgba(74,222,128,0.15); animation:none; }
+  .title-art { font-size:clamp(40px,8vw,70px); line-height:1; text-align:center; margin-bottom:8px; }
+  #apiInput { display:flex; flex-direction:column; gap:6px; align-items:center; font-size:5px; color:#666; }
+  #apiInput input { background:rgba(0,0,0,0.4); border:1px solid rgba(80,200,120,0.3); color:#aaa; font-family:var(--pixel); font-size:5px; padding:6px 10px; border-radius:2px; width:240px; outline:none; }
+  #apiInput label { font-size:5px; color:#555; }
+  #deathScreen { position:fixed; inset:0; background:rgba(80,0,0,0.85); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:100; gap:16px; }
+  #deathScreen h2 { font-size:20px; color:var(--red); text-shadow:0 0 20px red; }
+  #deathScreen p  { font-size:8px; color:#aaa; }
+  #respawnBtn { padding:10px 24px; background:transparent; border:2px solid var(--red); color:var(--red); font-family:var(--pixel); font-size:7px; cursor:pointer; border-radius:3px; margin-top:8px; }
+  #respawnBtn:hover { background:rgba(248,113,113,0.15); }
+  #collectPrompt { position:fixed; bottom:145px; left:50%; transform:translateX(-50%); background:var(--hud-bg); border:1px solid var(--hud-border); border-radius:3px; padding:6px 12px; font-size:5px; color:var(--green); pointer-events:none; z-index:11; opacity:0; transition:opacity 0.2s; }
+  #collectPrompt.show { opacity:1; }
+  canvas { position:fixed; top:0; left:0; }
+
+  /* ── SWARM SYSTEM UI ── */
+  #swarmAlert {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:50; pointer-events:none; opacity:0; transition:opacity 0.15s;
+    text-align:center;
+  }
+  #swarmAlert.show { opacity:1; }
+  #swarmAlert .swarm-title {
+    font-size:clamp(14px,3.5vw,28px); color:#ff3300;
+    text-shadow:0 0 20px #ff3300, 0 0 40px #ff0000, 2px 2px 0 #000;
+    animation:swarmPulse 0.4s ease-in-out infinite alternate;
+    letter-spacing:3px;
+  }
+  @keyframes swarmPulse { from{transform:scale(1)} to{transform:scale(1.08)} }
+  #swarmAlert .swarm-sub { font-size:7px; color:#ff8866; margin-top:6px; letter-spacing:1px; }
+
+  #threatMeter {
+    position:fixed; top:10px; left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    pointer-events:none; z-index:12;
+  }
+  #threatMeter .threat-label { font-size:5px; color:#cc4422; letter-spacing:1px; }
+  #threatMeter .threat-wrap { width:140px; height:7px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,80,30,0.5); border-radius:2px; overflow:hidden; }
+  #threatMeter .threat-fill { height:100%; background:linear-gradient(90deg,#7f1d1d,#ef4444,#ff9900); transition:width 0.4s; }
+  #threatMeter .threat-val { font-size:4px; color:#ff8866; }
+
+  #swarmCountdown {
+    position:fixed; top:80px; right:10px;
+    background:var(--hud-bg); border:1px solid rgba(255,80,30,0.4);
+    border-radius:3px; padding:4px 8px; font-size:5px; color:#ff8866;
+    pointer-events:none; z-index:11;
+  }
+
+  #rageNotice {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-200%);
+    z-index:50; pointer-events:none; opacity:0; transition:all 0.3s;
+    text-align:center;
+  }
+  #rageNotice.show { opacity:1; transform:translate(-50%,-140%); }
+  #rageNotice .rage-txt {
+    font-size:clamp(10px,2.5vw,18px); color:#ff9900;
+    text-shadow:0 0 15px #ff9900, 2px 2px 0 #000;
+    animation:rageShake 0.15s ease-in-out infinite alternate;
+  }
+  @keyframes rageShake { from{transform:translateX(-2px)} to{transform:translateX(2px)} }
+
+  /* Kill counter */
+  #killCounter { position:fixed; top:10px; left:50%; transform:translateX(-50%); background:var(--hud-bg); border:1px solid rgba(255,100,50,0.4); border-radius:4px; padding:5px 12px; font-size:6px; color:#f87171; z-index:11; pointer-events:none; display:none; }
+  #killCounter.show { display:block; }
+
+  /* Level badge */
+  #levelBadge { position:fixed; top:10px; left:50%; transform:translateX(-50%); margin-top:0; }
+
+  /* Boss health bar */
+  #bossBar { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); display:none; flex-direction:column; align-items:center; gap:4px; z-index:11; }
+  #bossBar.show { display:flex; }
+  #bossBar .boss-label { font-size:7px; color:#f87171; text-shadow:0 0 8px red; }
+  #bossBar .boss-bar-wrap { width:280px; height:12px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,80,80,0.5); border-radius:2px; overflow:hidden; }
+  #bossBar .boss-bar-fill { height:100%; background:linear-gradient(90deg,#7f0000,#ef4444); transition:width 0.2s; }
+
+  /* Portal prompt */
+  #portalPrompt { position:fixed; bottom:165px; left:50%; transform:translateX(-50%); background:rgba(80,0,120,0.85); border:1px solid rgba(200,100,255,0.6); border-radius:3px; padding:6px 14px; font-size:5px; color:#d8a0ff; pointer-events:none; z-index:11; opacity:0; transition:opacity 0.2s; }
+  #portalPrompt.show { opacity:1; }
+
+  /* Fire cooldown indicator */
+  #fireCooldownBar { position:fixed; bottom:145px; right:72px; display:none; flex-direction:column; align-items:center; gap:2px; z-index:11; pointer-events:none; }
+  #fireCooldownBar.show { display:flex; }
+  #fireCooldownBar span { font-size:4px; color:#f97316; }
+  #fireCooldownBar .fc-wrap { width:48px; height:4px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,100,0,0.4); border-radius:2px; overflow:hidden; }
+  #fireCooldownBar .fc-fill { height:100%; background:linear-gradient(90deg,#7c2d12,#f97316); transition:width 0.1s; }
+
+  /* Sword flash */
+  @keyframes swordFlash { 0%{box-shadow:0 0 12px rgba(255,220,50,0.8)} 100%{box-shadow:none} }
+
+  /* Level transition screen */
+  #levelTransition { position:fixed; inset:0; background:rgba(60,0,0,0.95); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:100; gap:14px; }
+  #levelTransition h2 { font-size:clamp(12px,3vw,22px); color:#f97316; text-shadow:0 0 30px #f97316; animation:hellPulse 1s ease-in-out infinite; }
+  @keyframes hellPulse { 0%,100%{text-shadow:0 0 20px #f97316,0 0 40px #dc2626;} 50%{text-shadow:0 0 40px #f97316,0 0 80px #dc2626;} }
+  #levelTransition p { font-size:8px; color:#fca5a5; font-family:var(--vt); font-size:20px; }
+  #levelTransition .hell-art { font-size:clamp(40px,8vw,70px); }
+
+  /* Victory screen */
+  #victoryScreen { position:fixed; inset:0; background:rgba(0,20,0,0.92); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:100; gap:14px; }
+  #victoryScreen h2 { font-size:clamp(14px,3vw,24px); color:#4ade80; text-shadow:0 0 30px #4ade80; }
+  #victoryScreen p { font-size:8px; color:#86efac; font-family:var(--vt); font-size:18px; }
+  #playAgainBtn { padding:10px 24px; background:transparent; border:2px solid #4ade80; color:#4ade80; font-family:var(--pixel); font-size:7px; cursor:pointer; border-radius:3px; }
+  #playAgainBtn:hover { background:rgba(74,222,128,0.15); }
+
+  /* ── HELL HORDE COUNTER ── */
+  #hellCounter {
+    position:fixed; top:30px; left:50%; transform:translateX(-50%);
+    background:rgba(60,0,0,0.88); border:1px solid rgba(255,60,0,0.5);
+    border-radius:4px; padding:5px 14px; font-size:6px; color:#ff8866;
+    z-index:11; pointer-events:none; display:none; text-align:center;
+  }
+  #hellCounter.show { display:block; }
+
+  /* ── BOSS ARRIVAL ── */
+  #bossArrival {
+    position:fixed; inset:0; display:none; flex-direction:column;
+    align-items:center; justify-content:center; z-index:80;
+    background:rgba(0,0,0,0); pointer-events:none;
+    animation:bossArrivalFlash 0.1s ease-in-out;
+  }
+  #bossArrival.show { display:flex; }
+  #bossArrival .ba-art  { font-size:clamp(50px,10vw,80px); animation:bossFloat 0.6s ease-in-out infinite alternate; }
+  #bossArrival .ba-title {
+    font-size:clamp(14px,3vw,26px); color:#ff2200; letter-spacing:3px; margin-top:10px;
+    text-shadow:0 0 30px #ff2200, 0 0 60px #ff0000, 2px 2px 0 #000;
+    animation:bossPulse 0.5s ease-in-out infinite alternate;
+  }
+  #bossArrival .ba-sub  { font-size:8px; color:#ff8866; margin-top:8px; letter-spacing:2px; }
+  @keyframes bossFloat  { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+  @keyframes bossPulse  { from{text-shadow:0 0 20px #ff2200,2px 2px 0 #000} to{text-shadow:0 0 50px #ff0000,0 0 80px #ff4400,2px 2px 0 #000} }
+
+  /* ── UPGRADE ANNOUNCEMENT ── */
+  #upgradeAnnounce {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    display:none; flex-direction:column; align-items:center; gap:8px;
+    z-index:75; pointer-events:none; text-align:center;
+  }
+  #upgradeAnnounce.show { display:flex; }
+  #upgradeAnnounce .ua-row {
+    font-size:clamp(9px,2vw,14px); padding:6px 20px;
+    border-radius:4px; letter-spacing:1px;
+  }
+  #upgradeAnnounce .ua-sword {
+    color:#ffe066; background:rgba(120,80,0,0.8); border:2px solid #ffd700;
+    text-shadow:0 0 10px #ffd700; animation:upgradeGlow 0.4s ease-in-out infinite alternate;
+  }
+  #upgradeAnnounce .ua-fire {
+    color:#ff9944; background:rgba(100,20,0,0.8); border:2px solid #ff6600;
+    text-shadow:0 0 10px #ff6600; animation:upgradeGlow2 0.4s ease-in-out infinite alternate;
+  }
+  @keyframes upgradeGlow  { from{box-shadow:0 0 8px #ffd700}  to{box-shadow:0 0 24px #ffd700,0 0 40px #ffaa00} }
+  @keyframes upgradeGlow2 { from{box-shadow:0 0 8px #ff6600}  to{box-shadow:0 0 24px #ff6600,0 0 40px #ff4400} }
+
+  /* ── UPGRADED FIRE COOLDOWN (wider bar) ── */
+  #fireCooldownBar.upgraded .fc-wrap { width:72px; }
+  #fireCooldownBar.upgraded .fc-fill { background:linear-gradient(90deg,#7c0000,#ff4400,#ffdd00); }
+  #fireCooldownBar.upgraded span { color:#ffdd00; }
